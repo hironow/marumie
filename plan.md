@@ -422,7 +422,7 @@ model ExpenseShare {
     - `accounts`: `political_organization_id`, `name`, `type`（bank/cash/card/investment/loan…）
     - `account_snapshots`: `account_id`, `as_of_date`（unique）, `balance`
   - `budgets`（カテゴリ×月の予算）
-    - `political_organization_id`, `year_month`（YYYY-MM）, `category_key`, `amount`（unique 複合）
+    - 当面は“見える化”優先のためUI/APIは保留。テーブル定義は将来拡張用として維持
   - `rules`（自動分類/ラベル/按分ルール）
     - `field`（description/label 等）, `operator`（contains/regex）, `pattern`, `action`, `priority`, `is_active`
   - `expense_shares`（取引×メンバーの按分）
@@ -444,7 +444,7 @@ model ExpenseShare {
   2) PR: `category-mapping.household.ts` 追加
   3) PR: admin 家計CSV（コンバータ/プレビュー/保存の最小）
   4) PR: webapp 家計ダッシュボード/取引一覧（最小機能）
-  5) PR: budgets CRUD + 予算進捗
+  5) （保留）budgets CRUD + 予算進捗（見える化優先のため後段へ）
   6) PR: accounts/snapshots + ネットワース/配分
   7) PR: household_members + RBAC + expense_shares（按分/精算）
 
