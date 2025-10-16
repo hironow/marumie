@@ -200,7 +200,16 @@ export const PL_CATEGORIES: Record<string, CategoryMapping> = {
  * 貸借対照表科目のカテゴリ分類
  */
 export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_asset" }> = {
+  "現金": {
+    type: "asset"
+  },
   "普通預金": {
+    type: "asset"
+  },
+  "当座預金": {
+    type: "asset"
+  },
+  "定期預金": {
     type: "asset"
   },
   "未払金/未払費用": {
@@ -211,4 +220,4 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
 /**
  * 現金類の科目
  */
-export const CASH_ACCOUNTS = new Set(["普通預金"]);
+export const CASH_ACCOUNTS = new Set(["現金", "普通預金", "当座預金", "定期預金"]);
