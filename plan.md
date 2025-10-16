@@ -314,6 +314,19 @@ model ExpenseShare {
 
 ---
 
+### 11.1 現在のマイグレーションスナップショットとロールバック
+
+- 生成済みマイグレーション（追加のみ）
+  - `prisma/migrations/20251016_household_minimal/migration.sql`
+  - 目的: 追加テーブル（organization_settings / household_members / accounts / account_snapshots / budgets / rules / expense_shares）の初期作成。
+- 反映方法（ローカル）
+  - Supabase 起動後に `pnpm db:migrate`（`.env.dev` を使用）
+- ロールバック方針（最小）
+  - 追加テーブルのみのため、影響は限定的。
+  - ロールバックは `DROP TABLE` 相当で容易。ただし保存済みデータがある場合は事前にエクスポート。
+  - 本番適用前に `migrate deploy` → `migrate resolve --applied` を活用し、移行順序を固定化。
+
+
 ## 12. テスト/品質
 
 - 単体: ルール適用/集計/按分/予算計算

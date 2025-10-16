@@ -83,7 +83,6 @@ export default async function OrgPage({ params }: OrgPageProps) {
         updatedAt={updatedAt}
         organizationName={currentOrganization?.displayName}
       />
-      <TransparencySection title="党首も毎日これを見て、お金をやりくりしています👀" />
       <BalanceSheetSection
         data={data?.balanceSheetData}
         updatedAt={updatedAt}
@@ -95,11 +94,6 @@ export default async function OrgPage({ params }: OrgPageProps) {
         slug={slug}
         organizationName={currentOrganization?.displayName}
       />
-      <AnotherPageLinkSection currentSlug={slug} />
-      <ProgressSection />
-      <ExplanationSection />
-      <AboutSection />
-      <LinkCardsSection />
     </MainColumn>
   );
 }

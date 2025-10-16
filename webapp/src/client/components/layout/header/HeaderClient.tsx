@@ -28,16 +28,6 @@ const getNavigationItems = (currentSlug: string) => [
     label: "すべての出入金",
     desktopLabel: "すべての出入金",
   },
-  {
-    href: `/o/${currentSlug}/#explanation`,
-    label: "データについて",
-    desktopLabel: "データについて",
-  },
-  {
-    href: "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
-    label: "よくあるご質問",
-    desktopLabel: "よくあるご質問",
-  },
 ];
 
 interface HeaderClientProps {
@@ -59,49 +49,6 @@ export default function HeaderClient({ organizations }: HeaderClientProps) {
       {/* Main Header Container with rounded background */}
       <div className="bg-white rounded-[20px] px-3 py-3 xl:px-6 xl:py-0 relative z-10">
         <div className="flex items-center gap-2 xl:h-16">
-          {/* Logo and Title Section */}
-          <Link
-            href={logoHref}
-            className="flex items-center gap-2 xl:gap-4 hover:opacity-80 transition-opacity cursor-pointer"
-          >
-            {/* Logo */}
-            <div className="flex items-center">
-              <div className="w-14 h-12 xl:w-12 xl:h-11 relative">
-                {/* Team Mirai Logo */}
-                <Image
-                  src="/logos/team-mirai-logo.svg"
-                  alt="Team Mirai Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
-
-            {/* Title and Subtitle - Mobile: Vertical Stack, Desktop: Horizontal with baseline alignment */}
-            <div className="flex flex-col gap-1.5 2xl:flex-row 2xl:items-end 2xl:gap-2 min-w-0">
-              {/* SP用ロゴ (xl未満で表示) */}
-              <div className="h-[45px] relative w-[126px] xl:hidden">
-                <Image
-                  src="/logos/service-logo-sp.svg"
-                  alt="みらいまる見え政治資金"
-                  fill
-                  className="object-contain object-left"
-                  priority
-                />
-              </div>
-              {/* PC用ロゴ (xl以上で表示) */}
-              <div className="hidden xl:block h-7 relative w-[300px]">
-                <Image
-                  src="/logos/service-logo-pc.svg"
-                  alt="みらいまる見え政治資金"
-                  fill
-                  className="object-contain object-left"
-                  priority
-                />
-              </div>
-            </div>
-          </Link>
-
           {/* Navigation Menu + Organization Selector */}
           <div className="flex items-center gap-8 flex-1 justify-end h-12 min-w-0">
             <nav

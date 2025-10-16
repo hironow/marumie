@@ -138,13 +138,7 @@ export default async function TransactionsPage({
               selectedCategories={categories}
             />
           </MainColumnCard>
-
-          <TransparencySection title="党内の機密データの流出事故ではありません☺️" />
           <AnotherPageLinkSection currentSlug={slug} />
-          <ProgressSection />
-          <ExplanationSection />
-          <AboutSection />
-          <LinkCardsSection />
         </MainColumn>
       </>
     );

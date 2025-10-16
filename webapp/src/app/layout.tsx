@@ -86,11 +86,7 @@ export default function RootLayout({
       >
         <Header />
         <div className="flex-grow">{children}</div>
-        <div className="mt-0 sm:mt-16">
-          <Footer />
-        </div>
-        <SpeedInsights sampleRate={0.1} />
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_TRACKING_ID || ""} />
+        <div className="mt-0 sm:mt-16"></div>
       </body>
     </html>
   );
