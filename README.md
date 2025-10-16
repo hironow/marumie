@@ -86,6 +86,21 @@ marumie/
 
 このプロジェクトはSupabaseローカル開発環境を使用してローカル開発を行います。
 
+### クイックスタート（最短）
+
+- すべて同時起動（Supabase + webapp + admin）
+  ```bash
+  pnpm run dev:setup   # 依存関係 + DBリセット/マイグレーション/シード
+  pnpm run dev         # Supabase起動後、webapp:3000 と admin:3001 を同時起動
+  ```
+
+- 事前に必要な設定
+  - ルート `./.env` に DB と Supabase の設定（特に `SUPABASE_URL` と `SUPABASE_SERVICE_ROLE_KEY`）。キーは Supabase Studio → Settings → API から取得（Anon/Public と Service Role のJWT）。
+  - `admin/.env.local` に `SUPABASE_URL` と `SUPABASE_ANON_KEY`（Studio → Settings → API の anon 公開鍵）
+  - （必要なら）`webapp/.env.local` に DB 接続設定
+
+詳細は以下の「Adminのみ」「Webappのみ」手順を参照してください。
+
 ### 開発環境セットアップ
 
 1. **初回セットアップ（推奨）**
@@ -128,7 +143,7 @@ pnpm run test          # テスト実行
 ```bash
 pnpm run supabase:start   # Supabaseローカル環境起動
 pnpm run supabase:stop    # Supabaseローカル環境停止
-pnpm run supabase:status  # Supabase状態確認
+# キーは Studio で確認: http://127.0.0.1:54323 → Settings → API
 ```
 
 #### ユーティリティ
@@ -136,6 +151,81 @@ pnpm run supabase:status  # Supabase状態確認
 pnpm run clean         # 全てのnode_modulesとSupabaseを停止
 pnpm run fresh         # クリーンインストール + セットアップ
 ```
+
+### Admin のみ起動（ポート: 3001）
+
+1) Supabase を起動（未起動なら）
+```bash
+pnpm run supabase:start
+```
+
+2) シード（テストユーザー作成まで行う場合）
+```bash
+# ルート .env に以下を設定（Studio → Settings → API）
+# SUPABASE_URL=http://127.0.0.1:54321
+# SUPABASE_SERVICE_ROLE_KEY="eyJ..."   # Service role key（JWT）
+pnpm run db:seed
+```
+
+3) Admin 環境変数の設定
+```bash
+cp admin/.env.example admin/.env.local
+# admin/.env.local を開いて、以下を設定
+# SUPABASE_URL=http://127.0.0.1:54321
+# SUPABASE_ANON_KEY="eyJ..."  # anon/public key（JWT, Studio → Settings → API）
+# （DB を使う機能を動かすなら）DATABASE_URL/DIRECT_URL も supabase の接続文字列へ
+```
+
+4) Admin を起動
+```bash
+pnpm run dev:admin
+# ブラウザ: http://localhost:3001
+```
+
+### Webapp のみ起動（ポート: 3000）
+
+1) Supabase/DB を使う機能がある場合は Supabase を起動
+```bash
+pnpm run supabase:start
+```
+
+2) Webapp 環境変数の設定
+```bash
+cp webapp/.env.example webapp/.env.local
+# webapp/.env.local を開いて必要な値を設定（主に DATABASE_URL 等）
+```
+
+3) Webapp を起動
+```bash
+pnpm run dev:webapp
+# ブラウザ: http://localhost:3000
+```
+
+### シード/テストユーザー
+
+シード実行でローカルのテストユーザーを作成するには、Supabase の Service Role Key 設定が必要です。
+
+- 前提準備
+  - Supabase を起動し、Studio でキーを確認（http://127.0.0.1:54323 → Settings → API）
+  - ルートの `.env` に以下を設定：
+    ```
+    SUPABASE_URL=http://127.0.0.1:54321
+    SUPABASE_SERVICE_ROLE_KEY="eyJ..."  # Service role key（JWT）
+    ```
+
+- 実行
+  ```bash
+  pnpm run db:seed       # もしくは pnpm run db:reset でマイグレーション後にシード
+  ```
+
+- 作成されるユーザー（prisma/seed.cjs に準拠）
+  - 管理者: foo@example.com / foo@example.com
+  - 一般ユーザー: bar@example.com / bar@example.com
+
+- 注意
+  - `SUPABASE_SERVICE_ROLE_KEY` が未設定の場合、ユーザー作成はスキップされます（その他のシードは実行されます）。
+  - 管理画面の動作には `admin/.env.example` を `admin/.env.local` にコピーし、`SUPABASE_URL` と `SUPABASE_ANON_KEY`（公開鍵）も設定してください。
+  - `pnpm run db:migrate` は `dotenv -e .env.dev` を参照する設定です。.env.dev を使わない場合は `.env` に統一するか、運用ルールをプロジェクトで揃えてください。
 
 ## データベースのマイグレーション
 
