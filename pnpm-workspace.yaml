@@ -1,4 +1,13 @@
 packages:
-  - 'packages/*'
-  - 'admin'
-  - 'webapp'
+  - packages/*
+  - admin
+  - webapp
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@tailwindcss/oxide'
+  - '@vercel/speed-insights'
+  - prisma
+  - sharp
+  - simple-git-hooks
