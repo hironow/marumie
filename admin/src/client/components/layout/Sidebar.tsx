@@ -28,6 +28,7 @@ export default function Sidebar({
     { href: "/transactions", label: "取引一覧" },
     { href: "/balance-snapshots", label: "残高登録" },
     { href: "/upload-csv", label: "CSVアップロード" },
+    { href: "/household/upload-csv", label: "家計CSVアップロード" },
     { href: "/users", label: "ユーザー管理", adminOnly: true },
   ];
 

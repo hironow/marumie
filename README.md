@@ -243,6 +243,7 @@ pnpm run db:migrate
 - **メインアプリ**: [http://localhost:3000](http://localhost:3000)
 - **管理画面**: [http://localhost:3001](http://localhost:3001)
 - **Supabase Studio**: [http://127.0.0.1:54323](http://127.0.0.1:54323)
+ - **家計CSVプレビュー/保存**: [http://localhost:3001/household/upload-csv](http://localhost:3001/household/upload-csv)
 
 ### モックデータの使用
 
@@ -256,6 +257,24 @@ USE_MOCK_DATA=true
 ## サンプルデータ
 
 `data/sampledata.csv` に政治資金の取引データのサンプルが含まれています。管理画面（ http://localhost:3001 ）の「CSVアップロード」機能からこのファイルをアップロードして確認できます。
+
+家計/世帯機能の最小サンプルは `data/household_sample.csv` を用意しています。管理画面の「家計CSVアップロード」からプレビュー/保存が可能です（シードで `household-sample` 組織が作成されます）。
+
+### 家計CSVフォーマット（最小）
+
+以下のヘッダ行を想定しています（UTF-8, 1行目はヘッダ）。
+
+```
+transaction_no,transaction_date,debit_account,debit_sub_account,debit_amount,credit_account,credit_sub_account,credit_amount,description
+```
+
+- transaction_no: 取引番号（文字列）
+- transaction_date: 取引日（YYYY-MM-DD）
+- debit_account / credit_account: 借方/貸方の勘定名（例: 食費, 普通預金, 勤務収入）
+- debit_amount / credit_amount: 数値（カンマは自動除去）
+- description: メモ（任意）
+
+サンプル: `data/household_sample.csv`
 
 ## ライセンス
 

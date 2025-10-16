@@ -16,6 +16,9 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Opposite relation: Household memberships
+  householdMemberships HouseholdMember[]
+
   @@map("users")
 }
 
@@ -29,6 +32,13 @@ model PoliticalOrganization {
   orgName          String?           @map("org_name") @db.VarChar(255)
   balanceSnapshots BalanceSnapshot[]
   transactions     Transaction[]
+
+  // Opposite relations for add-only household features
+  organizationSetting OrganizationSetting?
+  householdMembers    HouseholdMember[]
+  accounts            Account[]
+  budgets             Budget[]
+  rules               Rule[]
 
   @@map("political_organizations")
 }
@@ -62,6 +72,9 @@ model Transaction {
   hash                    String                @default("") @db.VarChar(255)
   politicalOrganization   PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
 
+  // Opposite relation for expense shares
+  expenseShares ExpenseShare[]
+
   @@unique([politicalOrganizationId, transactionNo])
   @@index([politicalOrganizationId, financialYear, transactionType, transactionDate(sort: Desc)])
   @@map("transactions")
@@ -91,4 +104,146 @@ enum TransactionType {
 enum UserRole {
   admin
   user
+}
+
+// =============================
+// Minimal Path: Add-only tables
+// Household/Personal features
+// =============================
+
+// 各組織の種別や辞書プロファイルなどの設定
+model OrganizationSetting {
+  id                      BigInt                @id @default(autoincrement())
+  politicalOrganizationId BigInt                @map("political_organization_id") @unique
+  orgType                 OrgType               @map("org_type")
+  mappingProfile          String?               @map("mapping_profile") @db.VarChar(64)
+  features                Json?
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+
+  politicalOrganization PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_settings")
+}
+
+enum OrgType {
+  political
+  household
+  personal
+}
+
+// 世帯メンバー（RBAC）
+model HouseholdMember {
+  id                      BigInt                @id @default(autoincrement())
+  politicalOrganizationId BigInt                @map("political_organization_id")
+  userId                  String                @map("user_id")
+  name                    String                @db.VarChar(255)
+  role                    HouseholdRole         @default(member)
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+
+  politicalOrganization PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenseShares         ExpenseShare[]
+
+  @@unique([politicalOrganizationId, userId])
+  @@map("household_members")
+}
+
+enum HouseholdRole {
+  owner
+  admin
+  member
+  viewer
+}
+
+// 口座（銀行/カード/投資/ローン/現金等）
+model Account {
+  id                      BigInt                @id @default(autoincrement())
+  politicalOrganizationId BigInt                @map("political_organization_id")
+  name                    String                @db.VarChar(255)
+  type                    AccountType
+  institution             String?               @db.VarChar(255)
+  currency                String                @default("JPY") @db.VarChar(16)
+  isActive                Boolean               @default(true) @map("is_active")
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+
+  politicalOrganization PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
+  snapshots             AccountSnapshot[]
+
+  @@index([politicalOrganizationId, type])
+  @@map("accounts")
+}
+
+enum AccountType {
+  bank
+  cash
+  credit_card
+  e_money
+  investment
+  loan
+}
+
+// 口座残高スナップショット
+model AccountSnapshot {
+  id         BigInt   @id @default(autoincrement())
+  accountId  BigInt   @map("account_id")
+  asOfDate   DateTime @map("as_of_date") @db.Date
+  balance    Decimal  @db.Decimal(18, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, asOfDate])
+  @@map("account_snapshots")
+}
+
+// 予算（カテゴリ×月）
+model Budget {
+  id                      BigInt                @id @default(autoincrement())
+  politicalOrganizationId BigInt                @map("political_organization_id")
+  yearMonth               String                @map("year_month") @db.VarChar(7)
+  categoryKey             String                @map("category_key") @db.VarChar(255)
+  amount                  Decimal               @db.Decimal(18, 2)
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+
+  politicalOrganization PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
+
+  @@unique([politicalOrganizationId, yearMonth, categoryKey])
+  @@map("budgets")
+}
+
+// 自動分類/ラベル/按分ルール
+model Rule {
+  id                      BigInt                @id @default(autoincrement())
+  politicalOrganizationId BigInt                @map("political_organization_id")
+  field                   String                @db.VarChar(64)
+  operator                String                @db.VarChar(32)
+  pattern                 String
+  action                  String
+  priority                Int                   @default(100)
+  isActive                Boolean               @default(true) @map("is_active")
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+
+  politicalOrganization PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
+
+  @@index([politicalOrganizationId, priority])
+  @@map("rules")
+}
+
+// 取引の按分（メンバー毎の負担）
+model ExpenseShare {
+  id             BigInt           @id @default(autoincrement())
+  transactionId  BigInt           @map("transaction_id")
+  memberId       BigInt           @map("member_id")
+  amount         Decimal          @db.Decimal(18, 2)
+
+  transaction Transaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  member      HouseholdMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionId, memberId])
+  @@map("expense_shares")
 }

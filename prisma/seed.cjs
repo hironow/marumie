@@ -13,6 +13,10 @@ async function main() {
     // Create admin user for local development
     await seedAdminUser();
 
+    // Add settings and minimal household scaffold (add-only)
+    await ensureOrganizationSettings();
+    await seedHouseholdSample();
+
     console.log('Seeding completed!');
 }
 
@@ -59,6 +63,149 @@ async function seedPoliticalOrganizations() {
         } else {
             console.log('Political organization already exists:', existing);
         }
+    }
+}
+
+// Ensure each political organization has an OrganizationSetting (default: political)
+async function ensureOrganizationSettings() {
+    console.log('Ensuring organization settings...');
+    const orgs = await prisma.politicalOrganization.findMany();
+
+    for (const org of orgs) {
+        const existing = await prisma.organizationSetting.findUnique({
+            where: { politicalOrganizationId: org.id }
+        }).catch(() => null);
+
+        if (!existing) {
+            await prisma.organizationSetting.create({
+                data: {
+                    politicalOrganizationId: org.id,
+                    orgType: 'political',
+                    mappingProfile: 'political-default',
+                    features: { csvProfiles: ['political-mf'], enabled: [] }
+                }
+            });
+            console.log(`  ✔ Created organization_setting for '${org.slug}' (political)`);
+        }
+    }
+}
+
+// Create a minimal Household sample (new org + settings + basic accounts/budgets)
+async function seedHouseholdSample() {
+    console.log('Creating household sample...');
+
+    // 1) Create or reuse organization as household container
+    const slug = 'household-sample';
+    let householdOrg = await prisma.politicalOrganization.findUnique({ where: { slug } });
+    if (!householdOrg) {
+        householdOrg = await prisma.politicalOrganization.create({
+            data: {
+                displayName: '家庭（サンプル）',
+                orgName: null,
+                slug,
+                description: '家計/世帯機能の検証用サンプル組織（最小データ）',
+            }
+        });
+        console.log(`  ✔ Created organization '${slug}'`);
+    } else {
+        console.log(`  • Organization '${slug}' already exists`);
+    }
+
+    // 2) Mark as household
+    const setting = await prisma.organizationSetting.findUnique({
+        where: { politicalOrganizationId: householdOrg.id }
+    }).catch(() => null);
+    if (!setting) {
+        await prisma.organizationSetting.create({
+            data: {
+                politicalOrganizationId: householdOrg.id,
+                orgType: 'household',
+                mappingProfile: 'household-default',
+                features: { csvProfiles: ['household-mf', 'bank-generic'], enabled: ['budgets','accounts'] }
+            }
+        });
+        console.log('  ✔ Marked as household with default mapping profile');
+    }
+
+    // 3) Create minimal accounts
+    const existingAccounts = await prisma.account.findMany({
+        where: { politicalOrganizationId: householdOrg.id }
+    });
+
+    if (existingAccounts.length === 0) {
+        const mainBank = await prisma.account.create({
+            data: {
+                politicalOrganizationId: householdOrg.id,
+                name: 'メイン銀行',
+                type: 'bank',
+                institution: 'Sample Bank',
+                currency: 'JPY',
+                isActive: true,
+            }
+        });
+        const creditCard = await prisma.account.create({
+            data: {
+                politicalOrganizationId: householdOrg.id,
+                name: 'クレジットカード',
+                type: 'credit_card',
+                institution: 'Sample Card',
+                currency: 'JPY',
+                isActive: true,
+            }
+        });
+
+        const today = new Date();
+        const asOfDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+        await prisma.accountSnapshot.createMany({
+            data: [
+                { accountId: mainBank.id, asOfDate, balance: 100000 },
+                { accountId: creditCard.id, asOfDate, balance: -30000 },
+            ],
+            skipDuplicates: true,
+        });
+        console.log('  ✔ Created sample accounts & snapshots');
+    } else {
+        console.log('  • Accounts already exist, skipping');
+    }
+
+    // 4) Create minimal budgets for current month
+    const ym = new Date().toISOString().slice(0,7); // YYYY-MM
+    const existingBudgets = await prisma.budget.findMany({
+        where: { politicalOrganizationId: householdOrg.id, yearMonth: ym }
+    });
+    if (existingBudgets.length === 0) {
+        await prisma.budget.createMany({
+            data: [
+                { politicalOrganizationId: householdOrg.id, yearMonth: ym, categoryKey: 'house.rent',     amount: 120000 },
+                { politicalOrganizationId: householdOrg.id, yearMonth: ym, categoryKey: 'house.utilities', amount: 20000 },
+                { politicalOrganizationId: householdOrg.id, yearMonth: ym, categoryKey: 'house.food',      amount: 50000 },
+            ],
+            skipDuplicates: true,
+        });
+        console.log(`  ✔ Created sample budgets for ${ym}`);
+    } else {
+        console.log(`  • Budgets already exist for ${ym}, skipping`);
+    }
+
+    // 5) Attach one admin user as household owner (if available)
+    const adminUser = await prisma.user.findFirst({ where: { role: 'admin' } });
+    if (adminUser) {
+        const existingMember = await prisma.householdMember.findFirst({
+            where: { politicalOrganizationId: householdOrg.id, userId: adminUser.id }
+        });
+        if (!existingMember) {
+            await prisma.householdMember.create({
+                data: {
+                    politicalOrganizationId: householdOrg.id,
+                    userId: adminUser.id,
+                    name: adminUser.email || 'Owner',
+                    role: 'owner',
+                }
+            });
+            console.log('  ✔ Linked admin user as household owner');
+        }
+    } else {
+        console.log('  ⚠ No admin user found; skipping household member link');
     }
 }
 
