@@ -138,7 +138,6 @@ export default async function TransactionsPage({
               selectedCategories={categories}
             />
           </MainColumnCard>
-          <AnotherPageLinkSection currentSlug={slug} />
         </MainColumn>
       </>
     );
